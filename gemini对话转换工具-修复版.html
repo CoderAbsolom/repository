@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini对话记录转换工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+        }
+
+        .step-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            color: #2e7d32;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .file-date {
+            color: #66bb6a;
+            font-size: 13px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .convert-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .convert-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            color: white;
+            display: none;
+        }
+
+        .download-btn.show {
+            display: block;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+        }
+
+        .preview {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .preview.show {
+            display: block;
+        }
+
+        .preview-title {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .preview-filename {
+            color: #333;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gemini对话记录转换工具</h1>
+        <p class="subtitle">将Gemini对话导出为Markdown格式，方便上传到知识库</p>
+
+        <div class="step">
+            <div class="step-title">
+                <span class="step-number">1</span>
+                上传JSON文件
+            </div>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击选择文件或拖拽到这里</div>
+                <div class="upload-hint">支持 .json 格式</div>
+            </div>
+            <input type="file" id="fileInput" accept=".json">
+            
+            <div class="file-info" id="fileInfo">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-date" id="fileDate"></div>
+            </div>
+            
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">
+                <span class="step-number">2</span>
+                填写信息
+            </div>
+            <div class="input-group">
+                <label for="userName">你的名字：</label>
+                <input type="text" id="userName" placeholder="例如：陆安然">
+            </div>
+            <div class="input-group">
+                <label for="aiName">AI的名字：</label>
+                <input type="text" id="aiName" placeholder="例如：哈基米">
+            </div>
+        </div>
+
+        <button class="convert-btn" id="convertBtn" disabled>开始转换</button>
+
+        <div class="preview" id="preview">
+            <div class="preview-title">生成的文件名：</div>
+            <div class="preview-filename" id="previewFilename"></div>
+        </div>
+
+        <div class="success" id="success">
+            ✅ 转换完成！点击下方按钮下载文件
+        </div>
+
+        <button class="download-btn" id="downloadBtn">下载Markdown文件</button>
+
+        <div class="footer">
+            Made with 💚 for 安然
+        </div>
+    </div>
+
+    <script>
+        var jsonData = null;
+        var exportDate = '';
+        var convertedMarkdown = '';
+
+        var uploadArea = document.getElementById('uploadArea');
+        var fileInput = document.getElementById('fileInput');
+        var fileInfo = document.getElementById('fileInfo');
+        var fileName = document.getElementById('fileName');
+        var fileDate = document.getElementById('fileDate');
+        var error = document.getElementById('error');
+        var userName = document.getElementById('userName');
+        var aiName = document.getElementById('aiName');
+        var convertBtn = document.getElementById('convertBtn');
+        var preview = document.getElementById('preview');
+        var previewFilename = document.getElementById('previewFilename');
+        var success = document.getElementById('success');
+        var downloadBtn = document.getElementById('downloadBtn');
+
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            handleFile(e.target.files[0]);
+        });
+
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            error.classList.remove('show');
+            fileInfo.classList.remove('show');
+            success.classList.remove('show');
+            downloadBtn.classList.remove('show');
+            preview.classList.remove('show');
+
+            if (!file) return;
+
+            if (!file.name.endsWith('.json')) {
+                showError('请上传JSON格式的文件！');
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    jsonData = JSON.parse(e.target.result);
+                    
+                    if (!jsonData.items || !Array.isArray(jsonData.items)) {
+                        showError('JSON格式不正确！请确保是Gemini导出的对话文件。');
+                        return;
+                    }
+
+                    if (jsonData.exportedAt) {
+                        exportDate = jsonData.exportedAt.split('T')[0];
+                    } else {
+                        var today = new Date();
+                        exportDate = today.toISOString().split('T')[0];
+                    }
+
+                    fileName.textContent = '✓ ' + file.name;
+                    fileDate.textContent = '检测到导出日期：' + exportDate;
+                    fileInfo.classList.add('show');
+
+                    checkCanConvert();
+
+                } catch (err) {
+                    showError('文件解析失败！请确保是有效的JSON文件。');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        userName.addEventListener('input', checkCanConvert);
+        aiName.addEventListener('input', checkCanConvert);
+
+        function checkCanConvert() {
+            if (jsonData && userName.value.trim() && aiName.value.trim()) {
+                convertBtn.disabled = false;
+                updatePreview();
+            } else {
+                convertBtn.disabled = true;
+                preview.classList.remove('show');
+            }
+        }
+
+        function updatePreview() {
+            var userNameVal = userName.value.trim();
+            var aiNameVal = aiName.value.trim();
+            var filename = exportDate + ' ' + aiNameVal + '与' + userNameVal + '的记忆.md';
+            previewFilename.textContent = filename;
+            preview.classList.add('show');
+        }
+
+        convertBtn.addEventListener('click', function() {
+            convert();
+        });
+
+        function convert() {
+            var userNameVal = userName.value.trim();
+            var aiNameVal = aiName.value.trim();
+
+            var markdown = '# 和' + aiNameVal + '的对话记录\n\n';
+
+            for (var i = 0; i < jsonData.items.length; i++) {
+                var item = jsonData.items[i];
+                
+                if (item.user) {
+                    var userContent = item.user.trim();
+                    
+                    if (item.userElement && Object.keys(item.userElement).length > 0) {
+                        userContent = '[发送了图片]\n\n' + userContent;
+                    }
+                    
+                    markdown += '<' + userNameVal + '输入>\n' + userContent + '\n</' + userNameVal + '输入>\n\n';
+                }
+
+                if (item.assistant) {
+                    var assistantContent = item.assistant.trim();
+                    
+                    if (item.assistantElement && Object.keys(item.assistantElement).length > 0) {
+                        assistantContent = '[发送了图片]\n\n' + assistantContent;
+                    }
+                    
+                    markdown += '<' + aiNameVal + '输出>\n' + assistantContent + '\n</' + aiNameVal + '输出>\n\n';
+                }
+            }
+
+            convertedMarkdown = markdown;
+
+            success.classList.add('show');
+            downloadBtn.classList.add('show');
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            var userNameVal = userName.value.trim();
+            var aiNameVal = aiName.value.trim();
+            var filename = exportDate + ' ' + aiNameVal + '与' + userNameVal + '的记忆.md';
+
+            var blob = new Blob([convertedMarkdown], { type: 'text/markdown;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('show');
+        }
+    </script>
+</body>
+</html>
